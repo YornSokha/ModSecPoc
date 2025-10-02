@@ -120,6 +120,7 @@ public class ModSecurityMiddleware
                 var requestBody = await ReadRequestBodyAsync(context.Request);
                 if (requestBody.Length > 0)
                 {
+                    _logger.LogInformation("Request Body : {Body}", Encoding.UTF8.GetString(requestBody));
                     transaction.AppendRequestBody(requestBody);
                 }
                 
