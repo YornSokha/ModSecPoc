@@ -1,0 +1,29 @@
+{
+  "Files": [
+    {
+      "Id": "/home/godmode/ModSecPoc/wwwroot/interactive-test.html",
+      "PackagePath": "staticwebassets/interactive-test.html"
+    },
+    {
+      "Id": "/home/godmode/ModSecPoc/wwwroot/test-suite.html",
+      "PackagePath": "staticwebassets/test-suite.html"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.ModSecPoc.Microsoft.AspNetCore.StaticWebAssets.props",
+      "PackagePath": "build\\Microsoft.AspNetCore.StaticWebAssets.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.build.ModSecPoc.props",
+      "PackagePath": "build\\ModSecPoc.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildMultiTargeting.ModSecPoc.props",
+      "PackagePath": "buildMultiTargeting\\ModSecPoc.props"
+    },
+    {
+      "Id": "obj/Debug/net8.0/staticwebassets/msbuild.buildTransitive.ModSecPoc.props",
+      "PackagePath": "buildTransitive\\ModSecPoc.props"
+    }
+  ],
+  "ElementsToRemove": []
+}

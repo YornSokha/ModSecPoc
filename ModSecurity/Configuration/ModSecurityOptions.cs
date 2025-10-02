@@ -15,7 +15,8 @@ public class ModSecurityOptions
     /// <summary>
     /// Path to the ModSecurity rules file
     /// </summary>
-    public string RulesFile { get; set; } = "/etc/modsecurity/modsecurity.conf";
+    public string? RulesFile { get; set; } = null;
+    // public string RulesFile { get; set; } = "/etc/modsecurity/modsecurity.conf";
 
     /// <summary>
     /// Additional rules files to load

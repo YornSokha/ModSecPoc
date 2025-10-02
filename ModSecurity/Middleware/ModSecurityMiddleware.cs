@@ -87,6 +87,9 @@ public class ModSecurityMiddleware
             var method = context.Request.Method;
             var httpVersion = context.Request.Protocol;
 
+            _logger.LogInformation("Processing URI: {Uri}, Method: {Method}, QueryString: {QueryString}", 
+                uri, method, context.Request.QueryString.ToString());
+
             transaction.ProcessUri(uri, method, httpVersion);
 
             // Add request headers
@@ -100,8 +103,12 @@ public class ModSecurityMiddleware
             
             // Check for intervention after processing request headers
             var intervention = transaction.GetIntervention();
+            _logger.LogInformation("Intervention after request headers: {HasIntervention}, IsDisruptive: {IsDisruptive}, EnforceMode: {EnforceMode}, Status: {Status}", 
+                intervention != null, intervention?.IsDisruptive ?? false, _options.EnforceMode, intervention?.Status ?? 0);
+            
             if (intervention != null && intervention.IsDisruptive && _options.EnforceMode)
             {
+                _logger.LogWarning("Blocking request due to intervention: Status={Status}, Log={Log}", intervention.Status, intervention.Log);
                 await HandleIntervention(context, intervention);
                 return;
             }
@@ -120,8 +127,12 @@ public class ModSecurityMiddleware
                 
                 // Check for intervention after processing request body
                 intervention = transaction.GetIntervention();
+                _logger.LogInformation("Intervention after request body: {HasIntervention}, IsDisruptive: {IsDisruptive}, EnforceMode: {EnforceMode}", 
+                    intervention != null, intervention?.IsDisruptive ?? false, _options.EnforceMode);
+                
                 if (intervention != null && intervention.IsDisruptive && _options.EnforceMode)
                 {
+                    _logger.LogWarning("Blocking request due to intervention: Status={Status}, Log={Log}", intervention.Status, intervention.Log);
                     await HandleIntervention(context, intervention);
                     return;
                 }

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ModSecurity Interactive Test Suite</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #2c3e50, #3498db);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .test-section {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 25px;
+            margin-bottom: 30px;
+            border-left: 4px solid #3498db;
+        }
+
+        .test-section h3 {
+            color: #2c3e50;
+            margin-bottom: 20px;
+            font-size: 1.4rem;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background: linear-gradient(135deg, #3498db, #2980b9);
+            color: white;
+            padding: 12px 25px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        .suggestions-btn {
+            background: linear-gradient(135deg, #f39c12, #e67e22);
+        }
+
+        .suggestions-btn:hover {
+            box-shadow: 0 5px 15px rgba(243, 156, 18, 0.4);
+        }
+
+        .response-section {
+            background: #2c3e50;
+            color: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+            display: none;
+        }
+
+        .response-section h4 {
+            margin-bottom: 15px;
+            color: #3498db;
+        }
+
+        .response-content {
+            background: #34495e;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .status-success {
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .status-blocked {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .quick-tests {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+        }
+
+        .suggestions {
+            background: #d1ecf1;
+            border-left: 4px solid #17a2b8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛡️ ModSecurity Interactive Test Suite</h1>
+            <p>Test custom inputs and see how ModSecurity responds in real-time</p>
+        </div>
+
+        <div class="content">
+            <div class="grid">
+                <!-- Custom POST Test -->
+                <div class="test-section">
+                    <h3>📝 Custom POST Data Test</h3>
+                    <div class="form-group">
+                        <label for="postData">POST Data (JSON):</label>
+                        <textarea id="postData" placeholder='{"data": "your test data here"}'></textarea>
+                    </div>
+                    <button onclick="testCustomPost()">Test POST</button>
+                    <button class="suggestions-btn" onclick="fillPostExample()">Fill Example</button>
+                    <div id="postResponse" class="response-section"></div>
+                </div>
+
+                <!-- Custom GET Test -->
+                <div class="test-section">
+                    <h3>🔗 Custom GET Parameters Test</h3>
+                    <div class="form-group">
+                        <label for="getInput">Input Parameter:</label>
+                        <input type="text" id="getInput" placeholder="Enter test input">
+                    </div>
+                    <div class="form-group">
+                        <label for="getParam1">Parameter 1:</label>
+                        <input type="text" id="getParam1" placeholder="Additional parameter">
+                    </div>
+                    <div class="form-group">
+                        <label for="getParam2">Parameter 2:</label>
+                        <input type="text" id="getParam2" placeholder="Another parameter">
+                    </div>
+                    <button onclick="testCustomGet()">Test GET</button>
+                    <button class="suggestions-btn" onclick="fillGetExample()">Fill Example</button>
+                    <div id="getResponse" class="response-section"></div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <!-- Advanced Multi-Vector Test -->
+                <div class="test-section">
+                    <h3>⚡ Advanced Multi-Vector Test</h3>
+                    <div class="form-group">
+                        <label for="sqlData">SQL Injection Test:</label>
+                        <input type="text" id="sqlData" placeholder="Enter SQL injection payload">
+                    </div>
+                    <div class="form-group">
+                        <label for="xssData">XSS Test:</label>
+                        <input type="text" id="xssData" placeholder="Enter XSS payload">
+                    </div>
+                    <div class="form-group">
+                        <label for="traversalPath">Path Traversal Test:</label>
+                        <input type="text" id="traversalPath" placeholder="Enter path traversal payload">
+                    </div>
+                    <div class="form-group">
+                        <label for="customField">Custom Field:</label>
+                        <input type="text" id="customField" placeholder="Any other test data">
+                    </div>
+                    <button onclick="testAdvanced()">Test Advanced</button>
+                    <button class="suggestions-btn" onclick="fillAdvancedExample()">Fill Example</button>
+                    <div id="advancedResponse" class="response-section"></div>
+                </div>
+
+                <!-- Attack Suggestions -->
+                <div class="test-section suggestions">
+                    <h3>💡 Attack Pattern Suggestions</h3>
+                    <div class="form-group">
+                        <label for="attackType">Select Attack Type:</label>
+                        <select id="attackType">
+                            <option value="xss">XSS (Cross-Site Scripting)</option>
+                            <option value="sqli">SQL Injection</option>
+                            <option value="traversal">Directory Traversal</option>
+                            <option value="useragent">Suspicious User-Agent</option>
+                        </select>
+                    </div>
+                    <button class="suggestions-btn" onclick="getSuggestions()">Get Suggestions</button>
+                    <div id="suggestionsResponse" class="response-section"></div>
+                </div>
+            </div>
+
+            <!-- Custom Headers Test -->
+            <div class="test-section">
+                <h3>📋 Custom Headers Test</h3>
+                <div class="form-group">
+                    <label for="headerData">Request Data:</label>
+                    <textarea id="headerData" placeholder='{"message": "test with custom headers"}'></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="userAgent">User-Agent:</label>
+                    <input type="text" id="userAgent" placeholder="Enter custom User-Agent">
+                </div>
+                <div class="form-group">
+                    <label for="customHeader">Custom Header Value:</label>
+                    <input type="text" id="customHeader" placeholder="Enter custom header value">
+                </div>
+                <button onclick="testCustomHeaders()">Test Headers</button>
+                <button class="suggestions-btn" onclick="fillHeaderExample()">Fill Example</button>
+                <div id="headerResponse" class="response-section"></div>
+            </div>
+
+            <!-- Quick Test Buttons -->
+            <div class="test-section quick-tests">
+                <h3>⚡ Quick Test Buttons</h3>
+                <button onclick="quickTest('xss')">Quick XSS Test</button>
+                <button onclick="quickTest('sqli')">Quick SQL Injection</button>
+                <button onclick="quickTest('traversal')">Quick Path Traversal</button>
+                <button onclick="quickTest('useragent')">Quick Bad User-Agent</button>
+                <button onclick="quickTest('normal')">Quick Normal Request</button>
+                <div id="quickTestResponse" class="response-section"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const baseUrl = window.location.origin;
+
+        function showResponse(elementId, response, status) {
+            const element = document.getElementById(elementId);
+            const statusClass = status >= 400 ? 'status-blocked' : 'status-success';
+            const statusText = status >= 400 ? '🚫 BLOCKED' : '✅ ALLOWED';
+            
+            element.innerHTML = `
+                <h4>Response (${statusText}) - Status: <span class="${statusClass}">${status}</span></h4>
+                <div class="response-content">${JSON.stringify(response, null, 2)}</div>
+            `;
+            element.style.display = 'block';
+        }
+
+        async function testCustomPost() {
+            const data = document.getElementById('postData').value || '{"data": "test"}';
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/InteractiveTest/custom-post`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: data
+                });
+                
+                const result = await response.text();
+                showResponse('postResponse', result, response.status);
+            } catch (error) {
+                showResponse('postResponse', `Error: ${error.message}`, 500);
+            }
+        }
+
+        async function testCustomGet() {
+            const input = document.getElementById('getInput').value;
+            const param1 = document.getElementById('getParam1').value;
+            const param2 = document.getElementById('getParam2').value;
+            
+            const params = new URLSearchParams();
+            if (input) params.append('input', input);
+            if (param1) params.append('param1', param1);
+            if (param2) params.append('param2', param2);
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/InteractiveTest/custom-get?${params}`);
+                const result = await response.text();
+                showResponse('getResponse', result, response.status);
+            } catch (error) {
+                showResponse('getResponse', `Error: ${error.message}`, 500);
+            }
+        }
+
+        async function testAdvanced() {
+            const data = {
+                sqlData: document.getElementById('sqlData').value,
+                xssData: document.getElementById('xssData').value,
+                traversalPath: document.getElementById('traversalPath').value,
+                customField: document.getElementById('customField').value
+            };
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/InteractiveTest/advanced-test`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.text();
+                showResponse('advancedResponse', result, response.status);
+            } catch (error) {
+                showResponse('advancedResponse', `Error: ${error.message}`, 500);
+            }
+        }
+
+        async function testCustomHeaders() {
+            const data = document.getElementById('headerData').value || '{"message": "test"}';
+            const userAgent = document.getElementById('userAgent').value;
+            const customHeader = document.getElementById('customHeader').value;
+            
+            const headers = { 'Content-Type': 'application/json' };
+            if (userAgent) headers['User-Agent'] = userAgent;
+            if (customHeader) headers['X-Custom-Test'] = customHeader;
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/InteractiveTest/custom-headers`, {
+                    method: 'POST',
+                    headers: headers,
+                    body: data
+                });
+                
+                const result = await response.text();
+                showResponse('headerResponse', result, response.status);
+            } catch (error) {
+                showResponse('headerResponse', `Error: ${error.message}`, 500);
+            }
+        }
+
+        async function getSuggestions() {
+            const attackType = document.getElementById('attackType').value;
+            
+            try {
+                const response = await fetch(`${baseUrl}/api/InteractiveTest/suggestions/${attackType}`);
+                const result = await response.json();
+                showResponse('suggestionsResponse', result, response.status);
+            } catch (error) {
+                showResponse('suggestionsResponse', `Error: ${error.message}`, 500);
+            }
+        }
+
+        async function quickTest(testType) {
+            const tests = {
+                xss: () => testQuickPayload(JSON.stringify({"data": "<script>alert('XSS')</script>"}), 'POST'),
+                sqli: () => testQuickPayload(JSON.stringify({"data": "' OR '1'='1"}), 'POST'),
+                traversal: () => fetch(`${baseUrl}/api/InteractiveTest/custom-get?input=../../../etc/passwd`),
+                useragent: () => fetch(`${baseUrl}/api/InteractiveTest/custom-post`, {
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'User-Agent': 'sqlmap/1.0'
+                    },
+                    body: JSON.stringify({"data": "test"})
+                }),
+                normal: () => testQuickPayload(JSON.stringify({"data": "normal test data"}), 'POST')
+            };
+            
+            try {
+                const response = await tests[testType]();
+                const result = await response.text();
+                showResponse('quickTestResponse', result, response.status);
+            } catch (error) {
+                showResponse('quickTestResponse', `Error: ${error.message}`, 500);
+            }
+        }
+
+        async function testQuickPayload(payload, method = 'POST') {
+            return fetch(`${baseUrl}/api/InteractiveTest/custom-post`, {
+                method: method,
+                headers: { 'Content-Type': 'application/json' },
+                body: payload
+            });
+        }
+
+        // Example data fillers
+        function fillPostExample() {
+            document.getElementById('postData').value = JSON.stringify({
+                "data": "<script>alert('XSS Test')</script>", 
+                "user": "admin' OR 1=1--"
+            });
+        }
+
+        function fillGetExample() {
+            document.getElementById('getInput').value = '../../../etc/passwd';
+            document.getElementById('getParam1').value = "' OR '1'='1";
+            document.getElementById('getParam2').value = '<img src=x onerror=alert(1)>';
+        }
+
+        function fillAdvancedExample() {
+            document.getElementById('sqlData').value = "' UNION SELECT * FROM users--";
+            document.getElementById('xssData').value = '<svg onload=alert(1)>';
+            document.getElementById('traversalPath').value = '../../windows/system32/drivers/etc/hosts';
+            document.getElementById('customField').value = 'javascript:alert("test")';
+        }
+
+        function fillHeaderExample() {
+            document.getElementById('headerData').value = JSON.stringify({
+                "test": "data with potential XSS: <script>alert(1)</script>"
+            });
+            document.getElementById('userAgent').value = 'nikto/2.1.6';
+            document.getElementById('customHeader').value = 'malicious-value';
+        }
+    </script>
+</body>
+</html>

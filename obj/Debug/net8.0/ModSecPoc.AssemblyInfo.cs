@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("ModSecPoc")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b0276a46a200e4dc255370ca0e0286b795f350e8")]
 [assembly: System.Reflection.AssemblyProductAttribute("ModSecPoc")]
 [assembly: System.Reflection.AssemblyTitleAttribute("ModSecPoc")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

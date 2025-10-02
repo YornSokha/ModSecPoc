@@ -4,6 +4,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
@@ -21,8 +22,14 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+// Add static files support
+app.UseStaticFiles();
+
 // Add ModSecurity middleware (should be early in the pipeline)
 app.UseModSecurity();
+
+// Add controller support
+app.MapControllers();
 
 var summaries = new[]
 {
@@ -74,6 +81,14 @@ app.MapGet("/test/traversal", (string? path) =>
     return Results.Ok(new { message = "Path processed successfully", requestedPath = path });
 })
 .WithName("TestDirectoryTraversal")
+.WithOpenApi();
+
+// Test suite interface
+app.MapGet("/test-suite", () =>
+{
+    return Results.Redirect("/test-suite.html");
+})
+.WithName("TestSuite")
 .WithOpenApi();
 
 app.Run();

@@ -189,27 +189,21 @@ public class ModSecurityTransaction : IDisposable
     /// </summary>
     public ModSecurityInterventionResult? GetIntervention()
     {
-        var interventionPtr = ModSecurityNative.msc_intervention(_transactionHandle);
-        if (interventionPtr == IntPtr.Zero)
+        var result = ModSecurityNative.msc_intervention(_transactionHandle, out var intervention);
+        
+        // If the function returns 0 or there's no disruptive action, return null
+        if (result == 0 || intervention.disruptive == 0)
         {
             return null;
         }
 
-        try
+        return new ModSecurityInterventionResult
         {
-            var intervention = Marshal.PtrToStructure<ModSecurityIntervention>(interventionPtr);
-            return new ModSecurityInterventionResult
-            {
-                Status = intervention.status,
-                Url = intervention.url != IntPtr.Zero ? Marshal.PtrToStringAnsi(intervention.url) : null,
-                Log = intervention.log != IntPtr.Zero ? Marshal.PtrToStringAnsi(intervention.log) : null,
-                IsDisruptive = intervention.disruptive != 0
-            };
-        }
-        finally
-        {
-            ModSecurityNative.msc_intervention_cleanup(interventionPtr);
-        }
+            Status = intervention.status,
+            Url = intervention.url != IntPtr.Zero ? Marshal.PtrToStringAnsi(intervention.url) : null,
+            Log = intervention.log != IntPtr.Zero ? Marshal.PtrToStringAnsi(intervention.log) : null,
+            IsDisruptive = intervention.disruptive != 0
+        };
     }
 
     protected virtual void Dispose(bool disposing)

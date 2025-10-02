@@ -1,5 +1,6 @@
 /home/godmode/ModSecPoc/bin/Debug/net8.0/appsettings.Development.json
 /home/godmode/ModSecPoc/bin/Debug/net8.0/appsettings.json
+/home/godmode/ModSecPoc/bin/Debug/net8.0/ModSecPoc.staticwebassets.runtime.json
 /home/godmode/ModSecPoc/bin/Debug/net8.0/ModSecPoc
 /home/godmode/ModSecPoc/bin/Debug/net8.0/ModSecPoc.deps.json
 /home/godmode/ModSecPoc/bin/Debug/net8.0/ModSecPoc.runtimeconfig.json
@@ -17,6 +18,7 @@
 /home/godmode/ModSecPoc/obj/Debug/net8.0/ModSecPoc.csproj.CoreCompileInputs.cache
 /home/godmode/ModSecPoc/obj/Debug/net8.0/ModSecPoc.MvcApplicationPartsAssemblyInfo.cs
 /home/godmode/ModSecPoc/obj/Debug/net8.0/ModSecPoc.MvcApplicationPartsAssemblyInfo.cache
+/home/godmode/ModSecPoc/obj/Debug/net8.0/ModSecPoc.sourcelink.json
 /home/godmode/ModSecPoc/obj/Debug/net8.0/staticwebassets.build.json
 /home/godmode/ModSecPoc/obj/Debug/net8.0/staticwebassets.development.json
 /home/godmode/ModSecPoc/obj/Debug/net8.0/staticwebassets/msbuild.ModSecPoc.Microsoft.AspNetCore.StaticWebAssets.props

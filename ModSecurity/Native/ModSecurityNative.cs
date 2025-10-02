@@ -71,7 +71,7 @@ public static class ModSecurityNative
     #region Intervention Functions
 
     [DllImport(LibModSecurity, CallingConvention = CallingConvention.Cdecl)]
-    public static extern IntPtr msc_intervention(IntPtr transaction);
+    public static extern int msc_intervention(IntPtr transaction, out ModSecurityIntervention intervention);
 
     [DllImport(LibModSecurity, CallingConvention = CallingConvention.Cdecl)]
     public static extern void msc_intervention_cleanup(IntPtr intervention);

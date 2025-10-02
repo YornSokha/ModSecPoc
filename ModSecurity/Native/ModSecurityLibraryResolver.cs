@@ -30,13 +30,13 @@ public static class ModSecurityLibraryResolver
             // Try different possible library names and paths
             var possibleNames = new[]
             {
-                "libmodsecurity.so.3",      // Versioned library
-                "libmodsecurity.so",        // Symbolic link
-                "libmodsecurity",           // Without extension
-                "/usr/local/modsecurity/lib/libmodsecurity.so",  // Full path
-                "/usr/lib/x86_64-linux-gnu/libmodsecurity.so",   // Standard Ubuntu path
-                "/usr/lib/libmodsecurity.so",                    // Standard path
-                "/opt/modsecurity/lib/libmodsecurity.so"         // Alternative installation path
+                // "libmodsecurity.so.3",      // Versioned library
+                "libmodsecuritye.so",        // Symbolic link
+                // "libmodsecurity",           // Without extension
+                // "/usr/local/modsecurity/lib/libmodsecurity.so",  // Full path
+                // "/usr/lib/x86_64-linux-gnu/libmodsecurity.so",   // Standard Ubuntu path
+                // "/usr/lib/libmodsecurity.so",                    // Standard path
+                // "/opt/modsecurity/lib/libmodsecurity.so"         // Alternative installation path
             };
 
             foreach (var name in possibleNames)
