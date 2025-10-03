@@ -105,20 +105,46 @@ public class ModSecurityMiddleware
                                 }
                             }
 
-                            // Gather numbered CRS rule files (REQUEST-*.conf then RESPONSE-*.conf then others) deterministically
+                            // Gather CRS rule files
                             var allConfFiles = Directory.GetFiles(rulesDir, "*.conf", SearchOption.TopDirectoryOnly);
 
                             IEnumerable<string> OrderRules(IEnumerable<string> files, string prefix) => files
                                 .Where(f => Path.GetFileName(f).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
                                 .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
 
-                            var requestRules = OrderRules(allConfFiles, "REQUEST-");
-                            var responseRules = OrderRules(allConfFiles, "RESPONSE-");
-                            var otherRules = allConfFiles
-                                .Except(requestRules.Concat(responseRules))
-                                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
-
-                            var ordered = requestRules.Concat(responseRules).Concat(otherRules);
+                            IEnumerable<string> ordered;
+                            if (_options.LoadRulesByMinIdOrder)
+                            {
+                                // Experimental: order by smallest rule ID inside each file
+                                var fileMinIds = new List<(string file, int minId)>();
+                                foreach (var f in allConfFiles)
+                                {
+                                    try
+                                    {
+                                        var lines = File.ReadAllLines(f);
+                                        var ids = lines.SelectMany(l => System.Text.RegularExpressions.Regex.Matches(l, @"id:([0-9]{6})")
+                                                                             .Select(m => int.Parse(m.Groups[1].Value)));
+                                        var min = ids.DefaultIfEmpty(int.MaxValue).Min();
+                                        fileMinIds.Add((f, min));
+                                    }
+                                    catch (Exception parseEx)
+                                    {
+                                        _logger.LogDebug(parseEx, "Failed parsing rule IDs for ordering in file {File}", f);
+                                        fileMinIds.Add((f, int.MaxValue));
+                                    }
+                                }
+                                ordered = fileMinIds.OrderBy(t => t.minId).ThenBy(t => t.file, StringComparer.OrdinalIgnoreCase).Select(t => t.file);
+                                _logger.LogWarning("Using experimental LoadRulesByMinIdOrder. This may disrupt CRS intended load sequence.");
+                            }
+                            else
+                            {
+                                var requestRules = OrderRules(allConfFiles, "REQUEST-");
+                                var responseRules = OrderRules(allConfFiles, "RESPONSE-");
+                                var otherRules = allConfFiles
+                                    .Except(requestRules.Concat(responseRules))
+                                    .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+                                ordered = requestRules.Concat(responseRules).Concat(otherRules);
+                            }
 
                             int loaded = 0;
                             foreach (var ruleFile in ordered)

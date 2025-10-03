@@ -68,6 +68,7 @@ The ModSecurity configuration is located in `appsettings.json`:
 - **ParanoiaLevel**: Override CRS paranoia/detection level (0 = do not override)
 - **EnsureCrsSetupVersion**: Injects crs_setup_version variable if missing to suppress rule 901001 warning
 - **Inbound/Outbound/TotalAnomalyScoreThreshold**: Optional overrides for CRS anomaly scoring thresholds
+- **LoadRulesByMinIdOrder**: (Experimental) If true, reorders discovered CRS rule files by the smallest rule ID found in each file (ascending). Not recommended for production; may break intended CRS initialization and skipAfter logic.
 
 ### Rule 901001: "CRS is deployed without configuration"
 

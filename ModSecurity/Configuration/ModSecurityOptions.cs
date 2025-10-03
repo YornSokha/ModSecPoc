@@ -80,6 +80,13 @@ public class ModSecurityOptions
     /// Maximum response body size to inspect (in bytes)
     /// </summary>
     public int MaxResponseBodySize { get; set; } = 1024 * 1024; // 1MB
+
+    /// <summary>
+    /// When true, after collecting candidate CRS rule files, order them by the smallest rule ID contained in each file (ascending),
+    /// instead of the default semantic grouping (REQUEST-*, RESPONSE-*). This is generally NOT recommended because CRS relies on
+    /// its documented load order for skipAfter, initialization and variable setup semantics. Use only for experimental analysis.
+    /// </summary>
+    public bool LoadRulesByMinIdOrder { get; set; } = false;
 }
 
 /// <summary>
