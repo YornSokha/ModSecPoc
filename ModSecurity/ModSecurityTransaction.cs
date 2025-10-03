@@ -12,6 +12,7 @@ public class ModSecurityTransaction : IDisposable
     private IntPtr _transactionHandle;
     private bool _disposed = false;
     private readonly LogCallback? _logCallback;
+    private readonly List<string> _logLines = new();
 
     public ModSecurityTransaction(IntPtr modsecHandle, ModSecurityRuleSet ruleSet)
     {
@@ -28,8 +29,38 @@ public class ModSecurityTransaction : IDisposable
 
     private void LogCallbackHandler(IntPtr data, IntPtr logData)
     {
-        // Log handling can be implemented here
-        // For now, we'll just ignore the logs
+        if (logData != IntPtr.Zero)
+        {
+            try
+            {
+                var line = Marshal.PtrToStringAnsi(logData);
+                if (!string.IsNullOrWhiteSpace(line))
+                {
+                    lock (_logLines)
+                    {
+                        if (_logLines.Count < 500) // simple cap to avoid unbounded growth
+                        {
+                            _logLines.Add(line);
+                        }
+                    }
+                }
+            }
+            catch
+            {
+                // swallow
+            }
+        }
+    }
+
+    /// <summary>
+    /// Get collected native log lines for this transaction.
+    /// </summary>
+    public IReadOnlyList<string> GetLogLines()
+    {
+        lock (_logLines)
+        {
+            return _logLines.ToList();
+        }
     }
 
     /// <summary>

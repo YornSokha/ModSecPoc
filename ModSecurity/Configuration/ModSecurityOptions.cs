@@ -24,6 +24,34 @@ public class ModSecurityOptions
     public List<string> AdditionalRulesFiles { get; set; } = new();
 
     /// <summary>
+    /// Directory containing OWASP CRS (or other) rule .conf files. Defaults to ./modsecurity/rules
+    /// </summary>
+    public string? RulesDirectory { get; set; } = "./modsecurity/rules";
+
+    /// <summary>
+    /// Automatically scan and load OWASP CRS rule .conf files from <see cref="RulesDirectory"/>.
+    /// Loaded after the primary RulesFile and crs-setup.conf. Set false to disable implicit CRS loading.
+    /// </summary>
+    public bool AutoLoadCrs { get; set; } = true;
+
+    /// <summary>
+    /// Override paranoia level (sets both detection and blocking if >0). 0 = do not override.
+    /// </summary>
+    public int ParanoiaLevel { get; set; } = 0;
+
+    /// <summary>
+    /// When true, injects a SecAction to set tx.crs_setup_version if the provided crs-setup.conf does not set it (prevents rule 901001 warning).
+    /// </summary>
+    public bool EnsureCrsSetupVersion { get; set; } = true;
+
+    /// <summary>
+    /// Optional override of anomaly score thresholds. Null means leave as defined by crs-setup.conf.
+    /// </summary>
+    public int? InboundAnomalyScoreThreshold { get; set; }
+    public int? OutboundAnomalyScoreThreshold { get; set; }
+    public int? TotalAnomalyScoreThreshold { get; set; }
+
+    /// <summary>
     /// Log level for ModSecurity
     /// </summary>
     public ModSecurityLogLevel LogLevel { get; set; } = ModSecurityLogLevel.Info;

@@ -12,8 +12,10 @@ sudo apt-get update
 sudo apt-get install libmodsecurity3 libmodsecurity-dev
 ```
 
-### CentOS/RHEL/Fedora
+         "./modsecurity/crs-setup.conf"
 ```bash
+      "RulesDirectory": "./modsecurity/rules",
+      "AutoLoadCrs": true,
 sudo yum install libmodsecurity libmodsecurity-devel
 # or for newer versions:
 sudo dnf install libmodsecurity libmodsecurity-devel
@@ -43,6 +45,9 @@ The ModSecurity configuration is located in `appsettings.json`:
     "AdditionalRulesFiles": [
       "./modsecurity/crs-setup.conf"
     ],
+      "RulesDirectory": "./modsecurity/rules",
+      "AutoLoadCrs": true,
+      "ParanoiaLevel": 0,
     "LogLevel": "Info",
     "EnforceMode": false,
     "BlockStatusCode": 403,
@@ -58,6 +63,41 @@ The ModSecurity configuration is located in `appsettings.json`:
 - **Enabled**: Enable/disable ModSecurity processing
 - **RulesFile**: Path to the main ModSecurity rules file
 - **AdditionalRulesFiles**: Array of additional rule files to load
+- **RulesDirectory**: Directory scanned for CRS .conf files when AutoLoadCrs is true
+- **AutoLoadCrs**: Automatically load OWASP CRS rule files in the correct order
+- **ParanoiaLevel**: Override CRS paranoia/detection level (0 = do not override)
+- **EnsureCrsSetupVersion**: Injects crs_setup_version variable if missing to suppress rule 901001 warning
+- **Inbound/Outbound/TotalAnomalyScoreThreshold**: Optional overrides for CRS anomaly scoring thresholds
+
+### Rule 901001: "CRS is deployed without configuration"
+
+If you see a message like:
+
+```
+ModSecurity: Access denied ... [id "901001"] [msg "CRS is deployed without configuration! ..."]
+```
+
+It means `tx.crs_setup_version` was not set. This usually happens if `crs-setup.conf` (or `crs-setup.conf.example` copied to `crs-setup.conf`) is missing or stripped down. The integration will automatically inject a `SecAction` (id 900000) when `EnsureCrsSetupVersion` is true and the variable isn't found. To fix manually:
+
+1. Copy the example file provided by CRS:
+   ```bash
+   cp crs-setup.conf.example crs-setup.conf
+   ```
+2. Ensure it contains a line setting `tx.crs_setup_version` (usually done in CRS releases):
+   ```
+   SecAction "id:900000, phase:1, nolog, pass, t:none, setvar:tx.crs_setup_version=1"
+   ```
+3. Or rely on the auto-injection by leaving `EnsureCrsSetupVersion` true.
+
+### Adjusting Paranoia and Thresholds
+
+Set `ParanoiaLevel` (1-4). Higher levels add more restrictive rules (and potential false positives). You can also fine-tune anomaly thresholds via the optional fields. Leaving them null keeps CRS defaults from your `crs-setup.conf`.
+
+### Disabling Automatic CRS Loading
+
+Set `AutoLoadCrs` to false and manage rule inclusion manually via `RulesFile` and `AdditionalRulesFiles`.
+- **RulesDirectory**: Directory to scan for CRS rule .conf files (default `./modsecurity/rules`)
+- **AutoLoadCrs**: If true, automatically loads `crs-setup.conf` then all rule files in `RulesDirectory` in deterministic order
 - **LogLevel**: ModSecurity logging level (0-7)
 - **EnforceMode**: `true` to block requests, `false` to only log
 - **BlockStatusCode**: HTTP status code to return when blocking
@@ -72,7 +112,16 @@ ModSecurity rules are located in the `modsecurity/` directory:
 - `modsecurity.conf`: Main configuration and basic rules
 - `crs-setup.conf`: OWASP Core Rule Set setup configuration
 
-You can add OWASP Core Rule Set (CRS) rules for comprehensive protection:
+You can add OWASP Core Rule Set (CRS) rules for comprehensive protection. Place the CRS rule `.conf` files inside `modsecurity/rules` and optionally the `crs-setup.conf` in `modsecurity/` or the same directory. With `AutoLoadCrs` enabled (default) they will be loaded automatically in this order:
+
+1. `modsecurity.conf` (primary rules file)
+2. Any explicitly listed `AdditionalRulesFiles` (e.g., `crs-setup.conf`)
+3. `crs-setup.conf` discovered in the rules directory (if not already loaded)
+4. All `REQUEST-*.conf` files (sorted alphabetically)
+5. All `RESPONSE-*.conf` files (sorted alphabetically)
+6. Any other `*.conf` files in the rules directory (sorted alphabetically)
+
+Disable this behavior by setting `"AutoLoadCrs": false` or override the directory using `RulesDirectory`.
 
 ```bash
 # Download OWASP CRS

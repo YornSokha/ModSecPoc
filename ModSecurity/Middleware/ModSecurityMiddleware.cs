@@ -52,6 +52,105 @@ public class ModSecurityMiddleware
                     }
                 }
 
+                // Auto-load OWASP CRS rules (ordered) if enabled
+                if (_options.AutoLoadCrs && !string.IsNullOrWhiteSpace(_options.RulesDirectory))
+                {
+                    try
+                    {
+                        var rulesDir = Path.GetFullPath(_options.RulesDirectory);
+                        if (Directory.Exists(rulesDir))
+                        {
+                            // Load crs-setup.conf first if present either in rulesDir or its parent
+                            var crsSetupCandidates = new List<string>
+                            {
+                                Path.Combine(rulesDir, "crs-setup.conf"),
+                                Path.Combine(Path.GetDirectoryName(rulesDir) ?? string.Empty, "crs-setup.conf")
+                            }.Distinct().Where(File.Exists).ToList();
+
+                            foreach (var setup in crsSetupCandidates)
+                            {
+                                _ruleSet.LoadRulesFromFile(setup);
+                                _logger.LogInformation("Loaded CRS setup file: {File}", setup);
+                            }
+
+                            // crs_setup_version now expected to be present directly in crs-setup.conf (id 900000)
+
+                            // Optional overrides: paranoia level and anomaly thresholds
+                            var overrideFragments = new List<string>();
+                            if (_options.ParanoiaLevel > 0)
+                            {
+                                overrideFragments.Add($"setvar:tx.detection_paranoia_level={_options.ParanoiaLevel}");
+                                overrideFragments.Add($"setvar:tx.blocking_paranoia_level={_options.ParanoiaLevel}");
+                            }
+                            if (_options.InboundAnomalyScoreThreshold.HasValue)
+                                overrideFragments.Add($"setvar:tx.inbound_anomaly_score_threshold={_options.InboundAnomalyScoreThreshold.Value}");
+                            if (_options.OutboundAnomalyScoreThreshold.HasValue)
+                                overrideFragments.Add($"setvar:tx.outbound_anomaly_score_threshold={_options.OutboundAnomalyScoreThreshold.Value}");
+                            if (_options.TotalAnomalyScoreThreshold.HasValue)
+                                overrideFragments.Add($"setvar:tx.anomaly_score_threshold={_options.TotalAnomalyScoreThreshold.Value}");
+
+                            if (overrideFragments.Count > 0)
+                            {
+                                var overrideRule = "SecAction \"id:900010, phase:1, nolog, pass, t:none, " + string.Join(",", overrideFragments) + "\"";
+                                try
+                                {
+                                    var tempFile = Path.GetTempFileName();
+                                    File.WriteAllText(tempFile, overrideRule + Environment.NewLine);
+                                    _ruleSet.LoadRulesFromFile(tempFile);
+                                    _logger.LogInformation("Injected CRS override rule (900010): {Fragments}", string.Join("; ", overrideFragments));
+                                }
+                                catch (Exception overrideEx)
+                                {
+                                    _logger.LogWarning(overrideEx, "Failed to inject CRS override rule (900010)");
+                                }
+                            }
+
+                            // Gather numbered CRS rule files (REQUEST-*.conf then RESPONSE-*.conf then others) deterministically
+                            var allConfFiles = Directory.GetFiles(rulesDir, "*.conf", SearchOption.TopDirectoryOnly);
+
+                            IEnumerable<string> OrderRules(IEnumerable<string> files, string prefix) => files
+                                .Where(f => Path.GetFileName(f).StartsWith(prefix, StringComparison.OrdinalIgnoreCase))
+                                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+
+                            var requestRules = OrderRules(allConfFiles, "REQUEST-");
+                            var responseRules = OrderRules(allConfFiles, "RESPONSE-");
+                            var otherRules = allConfFiles
+                                .Except(requestRules.Concat(responseRules))
+                                .OrderBy(f => f, StringComparer.OrdinalIgnoreCase);
+
+                            var ordered = requestRules.Concat(responseRules).Concat(otherRules);
+
+                            int loaded = 0;
+                            foreach (var ruleFile in ordered)
+                            {
+                                try
+                                {
+                                    _ruleSet.LoadRulesFromFile(ruleFile);
+                                    loaded++;
+                                    if (loaded % 25 == 0)
+                                    {
+                                        _logger.LogInformation("Loaded {Count} CRS rule files so far...", loaded);
+                                    }
+                                }
+                                catch (Exception rex)
+                                {
+                                    _logger.LogError(rex, "Failed loading CRS rule file: {File}", ruleFile);
+                                }
+                            }
+
+                            _logger.LogInformation("Auto-loaded {Count} CRS rule files from {Dir}", loaded, rulesDir);
+                        }
+                        else
+                        {
+                            _logger.LogWarning("Rules directory not found for CRS auto-load: {Dir}", rulesDir);
+                        }
+                    }
+                    catch (Exception crsEx)
+                    {
+                        _logger.LogError(crsEx, "Error during CRS auto-loading from directory {Dir}", _options.RulesDirectory);
+                    }
+                }
+
                 _logger.LogInformation("ModSecurity engine initialized: {EngineInfo}", _engine.WhoAmI());
             }
             catch (Exception ex)
@@ -67,6 +166,12 @@ public class ModSecurityMiddleware
         if (!_options.Enabled)
         {
             await _next(context);
+            return;
+        }
+
+        if (_engine == null || _ruleSet == null)
+        {
+            await _next(context); // Should not happen unless initialization failed
             return;
         }
 
@@ -95,7 +200,8 @@ public class ModSecurityMiddleware
             // Add request headers
             foreach (var header in context.Request.Headers)
             {
-                transaction.AddRequestHeader(header.Key, string.Join(", ", header.Value));
+                var headerValue = header.Value.Count == 1 ? header.Value.ToString() : string.Join(", ", header.Value.Where(v => v != null));
+                transaction.AddRequestHeader(header.Key, headerValue ?? string.Empty);
             }
 
             // Process request headers
@@ -105,6 +211,10 @@ public class ModSecurityMiddleware
             var intervention = transaction.GetIntervention();
             _logger.LogInformation("Intervention after request headers: {HasIntervention}, IsDisruptive: {IsDisruptive}, EnforceMode: {EnforceMode}, Status: {Status}", 
                 intervention != null, intervention?.IsDisruptive ?? false, _options.EnforceMode, intervention?.Status ?? 0);
+            if (intervention != null)
+            {
+                DumpTransactionLogs(transaction, "after headers");
+            }
             
             if (intervention != null && intervention.IsDisruptive && _options.EnforceMode)
             {
@@ -130,6 +240,10 @@ public class ModSecurityMiddleware
                 intervention = transaction.GetIntervention();
                 _logger.LogInformation("Intervention after request body: {HasIntervention}, IsDisruptive: {IsDisruptive}, EnforceMode: {EnforceMode}", 
                     intervention != null, intervention?.IsDisruptive ?? false, _options.EnforceMode);
+                if (intervention != null)
+                {
+                    DumpTransactionLogs(transaction, "after request body");
+                }
                 
                 if (intervention != null && intervention.IsDisruptive && _options.EnforceMode)
                 {
@@ -165,7 +279,8 @@ public class ModSecurityMiddleware
         // Add response headers
         foreach (var header in context.Response.Headers)
         {
-            transaction.AddResponseHeader(header.Key, string.Join(", ", header.Value));
+            var headerValue = header.Value.Count == 1 ? header.Value.ToString() : string.Join(", ", header.Value.Where(v => v != null));
+            transaction.AddResponseHeader(header.Key, headerValue ?? string.Empty);
         }
 
         // Process response headers
@@ -187,6 +302,7 @@ public class ModSecurityMiddleware
         {
             _logger.LogWarning("ModSecurity intervention: Status={Status}, Log={Log}, Disruptive={IsDisruptive}",
                 intervention.Status, intervention.Log, intervention.IsDisruptive);
+            DumpTransactionLogs(transaction, "final response");
 
             if (intervention.IsDisruptive && _options.EnforceMode)
             {
@@ -220,5 +336,21 @@ public class ModSecurityMiddleware
 
         _logger.LogWarning("Blocked request due to ModSecurity rule. Status: {Status}, Message: {Message}",
             context.Response.StatusCode, message);
+    }
+
+    private void DumpTransactionLogs(ModSecurityTransaction transaction, string stage)
+    {
+        try
+        {
+            var lines = transaction.GetLogLines();
+            if (lines.Count == 0) return;
+            var subset = lines.Take(15).ToList();
+            _logger.LogInformation("ModSecurity native logs ({Stage}, showing {Shown}/{Total}):\n{Lines}",
+                stage, subset.Count, lines.Count, string.Join("\n", subset));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogDebug(ex, "Failed dumping ModSecurity transaction logs at stage {Stage}", stage);
+        }
     }
 }
