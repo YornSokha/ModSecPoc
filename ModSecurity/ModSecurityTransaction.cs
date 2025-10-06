@@ -16,7 +16,7 @@ public class ModSecurityTransaction : IDisposable
 
     public ModSecurityTransaction(IntPtr modsecHandle, ModSecurityRuleSet ruleSet)
     {
-        // Create log callback (optional)
+        // Create log callback - this is essential for proper ModSecurity operation
         _logCallback = LogCallbackHandler;
         var logCallbackPtr = _logCallback != null ? Marshal.GetFunctionPointerForDelegate(_logCallback) : IntPtr.Zero;
 
@@ -25,6 +25,9 @@ public class ModSecurityTransaction : IDisposable
         {
             throw new InvalidOperationException("Failed to create ModSecurity transaction");
         }
+        
+        // Keep the callback alive for the lifetime of this transaction
+        GC.KeepAlive(_logCallback);
     }
 
     private void LogCallbackHandler(IntPtr data, IntPtr logData)
@@ -43,11 +46,18 @@ public class ModSecurityTransaction : IDisposable
                             _logLines.Add(line);
                         }
                     }
+                    
+                    // Debug output to see what ModSecurity is logging
+                    System.Diagnostics.Debug.WriteLine($"ModSecurity Log: {line}");
+                    
+                    // Also write to console for immediate visibility
+                    Console.WriteLine($"[ModSec] {line}");
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                // swallow
+                // Log callback errors for debugging
+                System.Diagnostics.Debug.WriteLine($"LogCallback error: {ex.Message}");
             }
         }
     }

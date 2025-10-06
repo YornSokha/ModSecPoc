@@ -11,6 +11,7 @@ public class ModSecurityEngine : IDisposable
 {
     private IntPtr _modsecHandle;
     private bool _disposed = false;
+    private readonly ModSecurityLogCallback? _globalLogCallback;
 
     public ModSecurityEngine()
     {

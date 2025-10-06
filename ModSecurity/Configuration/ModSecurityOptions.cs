@@ -26,7 +26,7 @@ public class ModSecurityOptions
     /// <summary>
     /// Directory containing OWASP CRS (or other) rule .conf files. Defaults to ./modsecurity/rules
     /// </summary>
-    public string? RulesDirectory { get; set; } = "./modsecurity/rules";
+    public string? RulesDirectory { get; set; }
 
     /// <summary>
     /// Automatically scan and load OWASP CRS rule .conf files from <see cref="RulesDirectory"/>.

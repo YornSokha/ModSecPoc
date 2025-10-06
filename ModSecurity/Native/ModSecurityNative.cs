@@ -86,6 +86,10 @@ public static class ModSecurityNative
     [DllImport(LibModSecurity, CallingConvention = CallingConvention.Cdecl)]
     public static extern void msc_set_connector_info(IntPtr modsec, IntPtr connector);
 
+    // Note: msc_set_log_cb might not be available in all ModSecurity versions
+    // [DllImport(LibModSecurity, CallingConvention = CallingConvention.Cdecl)]
+    // public static extern void msc_set_log_cb(IntPtr modsec, IntPtr logCb);
+
     #endregion
 }
 
@@ -106,3 +110,9 @@ public struct ModSecurityIntervention
 /// </summary>
 [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
 public delegate void LogCallback(IntPtr data, IntPtr logData);
+
+/// <summary>
+/// Alternative log callback signature that matches libmodsecurity exactly
+/// </summary>
+[UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+public delegate void ModSecurityLogCallback(IntPtr data, IntPtr logData);
