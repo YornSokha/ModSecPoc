@@ -3,7 +3,8 @@ using System.Runtime.InteropServices;
 namespace ModSecPoc.ModSecurity.Native;
 
 /// <summary>
-/// Native P/Invoke declarations for libmodsecurity.so
+/// Native P/Invoke declarations for ModSecurity native library
+/// Uses libmodsecurity.so on Linux/macOS and modsecurity.dll on Windows
 /// </summary>
 public static class ModSecurityNative
 {

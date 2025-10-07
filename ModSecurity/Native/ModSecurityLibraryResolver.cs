@@ -27,18 +27,45 @@ public static class ModSecurityLibraryResolver
     {
         if (libraryName == "libmodsecurity")
         {
-
-            if (NativeLibrary.TryLoad("./ModSecurity/Native/libmodsecurity.so", out var handle))
+            // Determine the appropriate library file based on the operating system
+            string libraryPath = GetNativeLibraryPath();
+            
+            if (NativeLibrary.TryLoad(libraryPath, out var handle))
             {
-                Console.WriteLine($"Successfully loaded ModSecurity library");
+                Console.WriteLine($"Successfully loaded ModSecurity library from: {libraryPath}");
                 return handle;
             }
 
             // If we couldn't find the library, provide helpful error information
-            Console.WriteLine("Failed to load ModSecurity library. Tried the following locations:");
-        
+            Console.WriteLine($"Failed to load ModSecurity library from: {libraryPath}");
+            Console.WriteLine("Make sure the appropriate native library is present in the ModSecurity/Native directory.");
         }
 
         return IntPtr.Zero;
+    }
+
+    /// <summary>
+    /// Get the appropriate native library path based on the current operating system
+    /// </summary>
+    /// <returns>The path to the native library file</returns>
+    private static string GetNativeLibraryPath()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+            return "./ModSecurity/Native/modsecurity.dll";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            return "./ModSecurity/Native/libmodsecurity.so";
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+        {
+            return "./ModSecurity/Native/libmodsecurity.dylib";
+        }
+        else
+        {
+            // Default to .so for unknown platforms
+            return "./ModSecurity/Native/libmodsecurity.so";
+        }
     }
 }
