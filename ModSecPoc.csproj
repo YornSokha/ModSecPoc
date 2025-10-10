@@ -12,4 +12,10 @@
     <PackageReference Include="System.Text.Json" Version="8.0.0" />
   </ItemGroup>
 
+    <!-- Ensure native ModSecurity binaries and their dependency DLLs are copied to output -->
+  <ItemGroup>
+    <!-- Copy everything under ModSecurity/Native (binaries, configs, mapping files) -->
+    <None Include="ModSecurity\Native\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>
