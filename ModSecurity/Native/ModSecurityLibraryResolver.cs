@@ -117,7 +117,7 @@ public static class ModSecurityLibraryResolver
             var fullDeps = Path.GetFullPath(depsDir);
             if (!paths.Contains(fullDeps, StringComparer.OrdinalIgnoreCase))
             {
-                Environment.SetEnvironmentVariable("PATH", fullDeps  ";"  currentPath);
+                Environment.SetEnvironmentVariable("PATH", fullDeps + ";" + currentPath);
                 Console.WriteLine($"Added ModSecurity dependencies path to PATH: {fullDeps}");
             }
 
